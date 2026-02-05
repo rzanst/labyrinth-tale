@@ -1,7 +1,3 @@
-//
-// Created by duke laptop on 12/2/2025.
-//
-
 #ifndef LABYRINTH_MAPUTL_H
 #define LABYRINTH_MAPUTL_H
 #include "globals.h"
@@ -11,6 +7,12 @@ void clear_screen();
 void greetings();
 void print_map_UI(char grid[MAX][MAX], int n, int m);
 void print_map_debug(char grid[MAX][MAX], int n, int m);
+
+// Pnp
+void placeBoxes(int count);
+int trigger_pnp_as_runner_on_cell();
+int how_many_mystery_boxes();
+int map_PnPed();
 
 // Utilities
 void zeroArr(int A[MAX][MAX], int n, int m);
@@ -40,6 +42,6 @@ int manhattanDistance(int a, int b, int x, int y);
 void randQ(int *x, int *y);
 int randWall(int k);
 void placeEntities(int H, int R);
-int mapGen(int k, int seed);
+int mapGen(int k, int seed, int isPnP);
 
 #endif // LABYRINTH_MAPUTL_H

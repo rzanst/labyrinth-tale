@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include "mapUtl.h"
 #include <unistd.h> // برای تابع usleep (ایجاد تاخیر)
+#include "PnP.h"
 
 int dist[MAXV];
 
@@ -68,6 +69,72 @@ void print_map_debug(char grid[MAX][MAX], int n, int m)
         printf("\n");
     }
     printf("\n");
+}
+
+// PnP
+int trigger_pnp_as_runner_on_cell()
+{
+    int rx = runners[0][0];
+    int ry = runners[0][1];
+    char cell = grid[2 * rx + 1][2 * ry + 1];
+
+    printf("\nMystery box activated!\n");
+    getchar();
+
+    int r = rand() % 4;
+    if (r == 0)
+        pnp_init('M'); // extra move
+    else if (r == 1)
+        pnp_init('T'); // +2 temp walls
+    else if (r == 2)
+        pnp_init('Q'); // earthquake
+    else
+        pnp_init('%'); // teleport hunter
+
+    pnp_just_happened = 1;
+    return 1;
+}
+
+int how_many_mystery_boxes()
+{
+    int cells = n * m;
+    int base = 2;               // Guaranteed minimum
+    int runner_bonus = R / 4;   // More runners = more boxes
+    int hunter_bonus = H / 3;   // Balance hunter threat
+    int size_bonus = cells / 8; // ~12% density
+    int wall_bonus = k / 8;     // More walls = more boxes
+
+    int result = base + runner_bonus + hunter_bonus + size_bonus + wall_bonus;
+
+    int min_boxes = cells / 12; // ~8% minimum density
+    int max_boxes = cells / 5;  // ~20% maximum density
+
+    if (result < min_boxes)
+        result = min_boxes;
+    if (result > max_boxes)
+        result = max_boxes;
+
+    return result;
+}
+
+int map_PnPed()
+{
+    const int boxes = how_many_mystery_boxes();
+    int x, y;
+    for (int i = 0; i < boxes;)
+    {
+        x = rand() % n;
+        y = rand() % m;
+        if (grid[2 * x + 1][2 * y + 1] == ' ')
+        {
+            grid[2 * x + 1][2 * y + 1] = '*';
+            i++;
+        }
+    }
+    printf("DEBUG: Placed mystery boxes\n");
+    fflush(stdout);
+    getchar();
+    return 0;
 }
 
 // Utilities
@@ -631,7 +698,7 @@ void placeEntities(int H, int R)
         }
     }
 }
-int mapGen(int k, int seed)
+int mapGen(int k, int seed, int isPnP)
 {
     srand(seed);
 
@@ -650,6 +717,42 @@ int mapGen(int k, int seed)
     //    print_map_debug(grid,n,m);
     //    getchar();
     placeEntities(H, R);
+    if (isPnP)
+        map_PnPed();
+}
+
+// PnP
+void placeBoxes(int count)
+{
+    // clear
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < m; j++)
+            box[i][j] = 0;
+
+    int placed = 0;
+    while (placed < count)
+    {
+        int x = rand() % n;
+        int y = rand() % m;
+
+        // don't place on core/runner/hunter
+        if (x == core_x && y == core_y)
+            continue;
+        if (x == runners[0][0] && y == runners[0][1])
+            continue;
+        if (x == hunters[0][0] && y == hunters[0][1])
+            continue;
+
+        if (box[x][y])
+            continue;
+
+        box[x][y] = 1;
+
+        // show it on drawn grid so you can see it
+        grid[2 * x + 1][2 * y + 1] = 'B';
+
+        placed++;
+    }
 }
 
 // Test Env
