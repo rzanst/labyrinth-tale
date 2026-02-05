@@ -10,11 +10,15 @@
 
 int n, m;
 int core_x, core_y;
-int num_runners, num_hunters;
 char grid[MAX][MAX];
 int runners[MAX][MAX];
 int hunters[MAX][MAX];
 int runnersID[MAX];
 int huntersID[MAX];
+int tmpWall;
+int tempWallsPlaced[MAX];
+int seed;
+int R, H;
+
 // A place for other global
 // variables !!

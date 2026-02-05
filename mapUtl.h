@@ -8,6 +8,7 @@
 
 // UI
 void clear_screen();
+void greetings();
 void print_map_UI(char grid[MAX][MAX], int n, int m);
 void print_map_debug(char grid[MAX][MAX], int n, int m);
 
@@ -39,6 +40,6 @@ int manhattanDistance(int a, int b, int x, int y);
 void randQ(int *x, int *y);
 int randWall(int k);
 void placeEntities(int H, int R);
-int mapGen(int H, int R, int k, int seed);
+int mapGen(int k, int seed);
 
 #endif // LABYRINTH_MAPUTL_H
