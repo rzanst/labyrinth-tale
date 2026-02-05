@@ -1,16 +1,8 @@
 #include <stdio.h>
 #include <math.h>
+#include "globals.h"
 
 #define Max 100
-char grid[Max][Max];
-int runners[Max][Max];
-int hunters[Max][Max];
-
-void clear_screen()
-{
-  printf("\033[H\033[J");
-  fflush(stdout);
-}
 
 void greetings()
 {
@@ -46,17 +38,6 @@ void print_map(int n, int m)
       printf("%c", grid[i][j]);
     }
     printf("\n");
-  }
-}
-
-void zeroArr(int A[Max][Max], int n, int m)
-{
-  for (int i = 0; i < n; i++)
-  {
-    for (int j = 0; j < m; j++)
-    {
-      A[i][j] = 0;
-    }
   }
 }
 
