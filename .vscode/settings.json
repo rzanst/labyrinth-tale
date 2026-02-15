@@ -1,0 +1,7 @@
+{
+  "C_Cpp.codeAnalysis.clangTidy.checks.disabled": [
+    "clang-analyzer-security.ArrayBound",
+    "clang-analyzer-unix.Stream",
+    "clang-analyzer-security.insecureAPI.strcpy"
+  ]
+}

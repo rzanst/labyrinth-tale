@@ -4,7 +4,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include "mapUtl.h"
-#include <unistd.h> // برای تابع usleep (ایجاد تاخیر)
+#include <unistd.h>
 #include "PnP.h"
 
 int dist[MAXV];
@@ -35,29 +35,12 @@ void greetings()
     printf("Good luck, last hope of the surface world.\n");
     printf("--------------------------------------------------\n");
 
-    printf("Press Enter to Play ...  ");
+    printf("Press Enter to Play ...  \n");
     getchar();
     clear_screen();
 }
-void print_map_UI(char grid[MAX][MAX], int n, int m)
+void print_map_UI()
 {
-    int newN = 2 * n + 1;
-    int newM = 2 * m + 1;
-    for (int i = 0; i < newN; i++)
-    {
-        for (int j = 0; j < newM; j++)
-        {
-            if (grid[i][j] == '.' || grid[i][j] == ':')
-                printf(" ");
-            else
-                printf("%c ", grid[i][j]);
-        }
-        printf("\n");
-    }
-}
-void print_map_debug(char grid[MAX][MAX], int n, int m)
-{
-    printf("\n");
     int newN = 2 * n + 1;
     int newM = 2 * m + 1;
     for (int i = 0; i < newN; i++)
@@ -71,14 +54,71 @@ void print_map_debug(char grid[MAX][MAX], int n, int m)
     printf("\n");
 }
 
+int min(int a, int b)
+{
+    if (a < b)
+        return a;
+
+    return b;
+}
+
+void print_map_numbered()
+{
+    int newN = 2 * n + 1;
+    int newM = 2 * m + 1;
+    int maxHor = min(newM, 5);
+    int maxVer = min(newN, 5);
+
+    printf("\n");
+    printf("     ");
+    for (int i = 1; i < maxHor + 4; i++)
+    {
+        if (i > maxHor)
+        {
+            printf(".");
+            continue;
+        }
+        printf("%d", i);
+        if (i < newM - 2)
+            printf(",");
+    }
+    printf("\n\n");
+
+    for (int i = 0; i < newN; i++)
+    {
+        if (i == 0)
+            printf("   ");
+        else
+        {
+            maxVer--;
+            if (maxVer >= 0)
+            {
+                printf("%d  ", i);
+            }
+            else if (maxVer == -1)
+            {
+                printf("...");
+            }
+            else
+                printf("   ");
+        }
+
+        for (int j = 0; j < newM; j++)
+        {
+            printf("%c ", grid[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+
 // PnP
 int trigger_pnp_as_runner_on_cell()
 {
-    int rx = runners[0][0];
-    int ry = runners[0][1];
-    char cell = grid[2 * rx + 1][2 * ry + 1];
+    clear_screen();
+    print_map_UI();
 
-    printf("\nMystery box activated!\n");
+    printf("\n -------- Mystery Box Activated! -------- \n");
     getchar();
 
     int r = rand() % 4;
@@ -91,10 +131,8 @@ int trigger_pnp_as_runner_on_cell()
     else
         pnp_init('%'); // teleport hunter
 
-    pnp_just_happened = 1;
     return 1;
 }
-
 int how_many_mystery_boxes()
 {
     int cells = n * m;
@@ -116,11 +154,10 @@ int how_many_mystery_boxes()
 
     return result;
 }
-
-int map_PnPed()
+void map_PnPed()
 {
-    const int boxes = how_many_mystery_boxes();
     int x, y;
+    const int boxes = how_many_mystery_boxes();
     for (int i = 0; i < boxes;)
     {
         x = rand() % n;
@@ -131,14 +168,10 @@ int map_PnPed()
             i++;
         }
     }
-    printf("DEBUG: Placed mystery boxes\n");
-    fflush(stdout);
-    getchar();
-    return 0;
 }
 
 // Utilities
-void zeroArr(int A[MAX][MAX], int n, int m)
+void zero2DArr(int A[MAX][2], int n, int m)
 {
     for (int i = 0; i < n; i++)
     {
@@ -155,24 +188,10 @@ void baseMap()
     {
         for (j = 0; j < 2 * m + 1; j++)
         {
-            if (i % 2 == 0)
-            {
-                if (j % 2 == 0)
-                {
-                    grid[i][j] = '+';
-                }
-                else
-                    grid[i][j] = '.';
-            }
+            if (i % 2 == 0 && j % 2 == 0)
+                grid[i][j] = '+';
             else
-            {
-                if (j % 2 == 0)
-                {
-                    grid[i][j] = ':';
-                }
-                else
-                    grid[i][j] = ' ';
-            }
+                grid[i][j] = ' ';
         }
     }
 }
@@ -183,13 +202,11 @@ void borders()
     {
         if (j % 2 == 0)
         {
-            grid[0][j] = '+';
             grid[2 * n][j] = '+';
         }
         else
         {
-            grid[0][j] = '-';
-            grid[2 * n][j] = '-';
+            grid[0][j] = grid[2 * n][j] = '-';
         }
     }
     for (i = 1; i < 2 * n + 1; i += 2)
@@ -204,8 +221,40 @@ void swap(int *x, int *y)
     *y = t;
 }
 
+void insert_tmp_wall(int x, int y)
+{
+    // Horizontal slots: Odd Row (x), Even Column (y) -> '-'
+    // Vertical slots: Even Row (x), Odd Column (y) -> '|'
+    if (x % 2 != 0 && y % 2 == 0)
+    {
+        grid[x][y] = '|';
+    }
+    else
+    {
+        grid[x][y] = '-';
+    }
+
+    // Storing temp wall's stats
+    AllTempWalls[numberOfTWPlaced].x = x;
+    AllTempWalls[numberOfTWPlaced].y = y;
+    AllTempWalls[numberOfTWPlaced].health = 2;
+
+    numberOfTWPlaced++;
+    tmpWallsToPlace--;
+}
+
+int read_non_newline_char(void)
+{
+    int c;
+    do
+    {
+        c = getchar();
+    } while (c == '\n' || c == '\r');
+    return c;
+}
+
 // Input Management
-void getDimen(int *n, int *m)
+void getDimen()
 {
     int sw = 0;
     do
@@ -215,9 +264,9 @@ void getDimen(int *n, int *m)
             printf("Please Enter a valid number for dimensions: (rows and columns can't be less than 2!)\n");
         }
         printf("Enter the board dimensions (rows columns):\n>>> ");
-        scanf("%d %d", &*n, &*m);
+        scanf("%d %d", &n, &m);
         sw = 1;
-    } while (*n < 2 || *m < 2);
+    } while (n < 2 || m < 2);
     getchar();
 }
 void epic_print(char *text)
@@ -230,7 +279,7 @@ void epic_print(char *text)
     }
     printf("\n");
 }
-void get_walls_interactive(int *k)
+void get_walls_interactive()
 {
     int t, a, random_val;
     int sw = 0;
@@ -253,7 +302,7 @@ void get_walls_interactive(int *k)
             if (a == random_val)
             {
                 printf("\033[1;32m\n[!] THE STARS ALIGN. You have earned your hollow victory. The walls shall remain buried.\033[0m\n");
-                *k = 0;
+                k = 0;
                 break;
             }
             else
@@ -290,34 +339,63 @@ void get_walls_interactive(int *k)
         }
         else
         {
-            *k = t;
+            k = t;
             printf("\033[1;32mThe earth groans as the stones take their place...\033[0m\n");
             break;
         }
     }
 }
 
-void getRnHnK(int *R, int *H, int *k)
+void getRnHnK()
 {
     int t;
-    printf("How many brave Runners will challenge the darkness?\n");
-    scanf("%d", &t);
-    *R = t;
-    printf("How many silent Hunters lurk in the shadows?\n");
-    scanf("%d", &t);
-    *H = t;
-    get_walls_interactive(k);
+    do
+    {
+        printf("How many brave Runners will challenge the darkness?\n");
+        scanf("%d", &t);
+        if (t == 0)
+        {
+            printf("Having Zero Runner in such game is as useless as your being!\n");
+            continue;
+        }
+        else if (t > (n * m - 1))
+        {
+            printf("It's impossible to put %d runners in and %dx%d map while having one core in it!\n", t, n, m);
+            continue;
+        }
+        R = t;
+        break;
+    } while (1);
+    do
+    {
+        printf("How many silent Hunters lurk in the shadows?\n");
+        scanf("%d", &t);
+        if (t == 0)
+        {
+            printf("If you are wondering to play this game with zero hunter go play candycrush!\n");
+            continue;
+        }
+        else if (t > (n * m - 1 - R))
+        {
+            printf("It's impossible to put %d runners in and %dx%d map while having one core in it beside the %d runners!\n", t, n, m, R);
+            continue;
+        }
+        H = t;
+        break;
+    } while (1);
+
+    get_walls_interactive();
     //    printf("How many Ancient Barriers shall rise from the depths to block the forgotten paths? (The Great Borders already stand eternal.)\n");
     //    scanf("%d",&t);
     //    *k = t;
 }
-void customBoard(int n, int m)
+void customBoard()
 {
     int i, j;
     int sw = 0;
 
-    zeroArr(hunters, n, m);
-    zeroArr(runners, n, m);
+    zero2DArr(hunters, n, m);
+    zero2DArr(runners, n, m);
 
     int nl, ml;
     nl = 2 * n + 1;
@@ -327,7 +405,7 @@ void customBoard(int n, int m)
 
     // Light Core placement
     int cx, cy;
-    sw = 0;
+
     do
     {
         if (sw)
@@ -357,7 +435,8 @@ void customBoard(int n, int m)
         } while (x < 0 || x >= nl || y < 0 || y >= ml ||
                  (x == cx && y == cy) ||
                  grid[2 * x + 1][2 * y + 1] != ' ');
-        runners[x][y] = 1;
+        runners[k][0] = x;
+        runners[k][1] = y;
         grid[2 * x + 1][2 * y + 1] = 'R';
     }
 
@@ -385,7 +464,6 @@ void customBoard(int n, int m)
 
     // Fixed walls placement
 
-    int k;
     printf("How many eternal stone Walls guard the ancient paths?\n");
     scanf("%d", &k);
 
@@ -436,7 +514,7 @@ void customBoard(int n, int m)
 
     clear_screen();
     // Printing the final map:
-    print_map_debug(grid, n, m);
+    print_map_UI();
 
     getchar();
     getchar();
@@ -456,6 +534,7 @@ int getWallCoords(int id, int *gridRow, int *gridCol)
 {
     int numVertWalls = n * (m - 1); // Walls separating columns (|)
 
+    // Based on our fomula if (id < numVertWalls) is true the wall is vertical
     if (id < numVertWalls)
     {
         // It's a vertical wall (|) between columns
@@ -579,7 +658,7 @@ int stepsFromDistance(int a, int b, int id)
 }
 int manhattanDistance(int a, int b, int x, int y)
 {
-    return ((fabs(a - x) + fabs(b - y)));
+    return ((abs(a - x) + abs(b - y)));
 }
 
 // Random Generators
@@ -631,7 +710,7 @@ int randWall(int k)
         else
         {
             // Wall breaks connectivity, remove it (restore)
-            grid[gridRow][gridCol] = backup; // likely ' ' or '.' depending on your map
+            grid[gridRow][gridCol] = backup; // likely ' ' depending on the map
         }
     }
 
@@ -698,7 +777,7 @@ void placeEntities(int H, int R)
         }
     }
 }
-int mapGen(int k, int seed, int isPnP)
+void mapGen(int seed)
 {
     srand(seed);
 
@@ -720,39 +799,3 @@ int mapGen(int k, int seed, int isPnP)
     if (isPnP)
         map_PnPed();
 }
-
-// PnP
-void placeBoxes(int count)
-{
-    // clear
-    for (int i = 0; i < n; i++)
-        for (int j = 0; j < m; j++)
-            box[i][j] = 0;
-
-    int placed = 0;
-    while (placed < count)
-    {
-        int x = rand() % n;
-        int y = rand() % m;
-
-        // don't place on core/runner/hunter
-        if (x == core_x && y == core_y)
-            continue;
-        if (x == runners[0][0] && y == runners[0][1])
-            continue;
-        if (x == hunters[0][0] && y == hunters[0][1])
-            continue;
-
-        if (box[x][y])
-            continue;
-
-        box[x][y] = 1;
-
-        // show it on drawn grid so you can see it
-        grid[2 * x + 1][2 * y + 1] = 'B';
-
-        placed++;
-    }
-}
-
-// Test Env

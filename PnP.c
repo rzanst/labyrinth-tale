@@ -3,16 +3,7 @@
 #include "game_logic.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-static int read_non_newline_char(void)
-{
-    int c;
-    do
-    {
-        c = getchar();
-    } while (c == '\n' || c == '\r');
-    return c;
-}
+#include "mapUtl.h"
 
 int pnp_init(char command)
 {
@@ -41,35 +32,30 @@ int pnp_init(char command)
 int extraMove(void)
 {
     printf("\n[Power] Extra Move activated! Enter W/A/S/D or X to stay:\n>>> ");
-    printf("Press Enter to continue...");
-    getchar();
-
     while (1)
     {
         int c = read_non_newline_char();
-        // clear rest of line
         while (getchar() != '\n')
             ;
-
         if (moveRunner((char)c))
-            return 0;
+            break;
         printf("Invalid extra move. Try again:\n>>> ");
     }
+    print_map_UI();
+    return 0;
 }
 
 int addTmpWall(void)
 {
-    tmpWall += 2;
-    printf("\n[Power] You got 2 temp walls! (tmpWall=%d)\n", tmpWall);
-    printf("Press Enter to continue...");
+    tmpWallsToPlace += 2;
+    printf("\n[Power] You got 2 more temp walls! (Your total Temp Walls = %d)\n", tmpWallsToPlace);
     getchar();
     return 0;
 }
 
 int earthQuake(void)
 {
-    printf("\n[Power] Earthquake! Everyone tries to move randomly once.\n");
-    printf("Press Enter to continue...");
+    printf("\n[Power] Earthquake!\nEveryone tries to move randomly once.\n");
     getchar();
 
     // runners
@@ -80,6 +66,17 @@ int earthQuake(void)
         {
             int dir = rand() % 4;
             moved = moveEntity('R', dir, runners[r][0], runners[r][1]);
+        }
+        // Check if this Runner hit any Hunter
+        for (int h = 0; h < H; h++)
+        {
+            if (runners[r][0] == hunters[h][0] && runners[r][1] == hunters[h][1])
+            {
+                printf("\n[Power] Earthquake threw you into a Hunter! GAME OVER.\n");
+                printf("Press [ENTER] to close...");
+                getchar();
+                exit(0);
+            }
         }
     }
 
@@ -92,8 +89,19 @@ int earthQuake(void)
             int dir = rand() % 4;
             moved = moveEntity('H', dir, hunters[h][0], hunters[h][1]);
         }
+        // Check if this Hunter hit any Runner
+        for (int r = 0; r < R; r++)
+        {
+            if (hunters[h][0] == runners[r][0] && hunters[h][1] == runners[r][1])
+            {
+                printf("\n[Power] Earthquake threw a Hunter onto you! GAME OVER.\n");
+                printf("Press [ENTER] to close...");
+                getchar();
+                exit(0);
+            }
+        }
     }
-
+    print_map_UI();
     return 0;
 }
 
@@ -106,10 +114,10 @@ int tpHunter(void)
     // list hunters
     for (int i = 0; i < H; i++)
     {
-        printf("Hunter %d at (x=%d, y=%d)\n", i + 1, hunters[i][0], hunters[i][1]);
+        printf("Hunter #%d at (x=%d, y=%d)\n", i + 1, hunters[i][0], hunters[i][1]);
     }
 
-    printf("Choose hunter number (1..%d):\n>>> ", H);
+    printf("Choose hunter number :\n>>> ");
     int c = read_non_newline_char();
     while (getchar() != '\n')
         ;
@@ -123,19 +131,19 @@ int tpHunter(void)
 
     while (1)
     {
-        printf("Direction: u/d/r/l\n>>> ");
+        printf("Direction: W/A/S/D\n>>> ");
         char dirC = (char)read_non_newline_char();
         while (getchar() != '\n')
             ;
 
         int dir = -1;
-        if (dirC == 'u')
+        if (dirC == 'w' || dirC == 'W')
             dir = 0;
-        else if (dirC == 'r')
+        else if (dirC == 'd' || dirC == 'D')
             dir = 1;
-        else if (dirC == 'd')
+        else if (dirC == 's' || dirC == 'S')
             dir = 2;
-        else if (dirC == 'l')
+        else if (dirC == 'a' || dirC == 'A')
             dir = 3;
         else
         {
@@ -144,7 +152,10 @@ int tpHunter(void)
         }
 
         if (moveEntity('H', dir, hunters[chosen][0], hunters[chosen][1]))
-            return 0;
+            break;
         printf("Blocked. Try another direction.\n");
     }
+    print_map_UI();
+
+    return 0;
 }
